@@ -2,9 +2,10 @@
 
 Currently supports .properties format.
 
+Run with no arguments for usage.
+
 author: David Mason
 email: damason@redhat.com
-license: GNU Lesser General Public License v2.1, see http://www.gnu.org/licenses/lgpl-2.1.html
 
 """
 
