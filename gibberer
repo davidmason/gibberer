@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+"""Generates translation files with random strings for testing purposes.
+
+Currently supports .properties format.
+
+Run with no arguments for usage.
+
+author: David Mason
+email: damason@redhat.com
+
+"""
+
+# This module's job is to handle command-line input and respond by invoking the
+# appropriate methods from other modules.
+
+validFileTypes=['properties', 'po']
+defaultBaseName = 'test'
+
+
+import sys
+import flowutil, poutil, proputil
+from optparse import OptionParser
+
+
+usage = 'usage: %prog [options] filetype [basename_1] ... [basename_n]'
+parser = OptionParser(usage)
+# Using args for base names instead, allowing any number of names
+#parser.add_option('-n', '--base-name',
+#                  action='append', dest='basename', default=[],
+#                  help='base name used for all output files and identifiers')
+
+parser.add_option('-l', '--locales',
+                  action='append', dest='locales', default=[],
+                  help='comma-separated list of locales for which to generate mock translations')
+
+parser.add_option('-d', '--num-docs',
+                  type='int', dest='numdocs', default=1,
+                  help='number of source documents to generate for each name provided')
+
+parser.add_option('-f', '--num-flows',
+                  type='int', dest='numflows', default=20,
+                  help='number of text flows to generate for each document')
+
+parser.add_option('-c', '--content-length',
+                  type='int', dest='contentlength', default=20,
+                  help='number of unicode characters to generate for each text flow content string')
+
+
+
+options, args = parser.parse_args()
+
+
+#make sure a (valid) filetype has been given
+if len(args) == 0:
+    print 'Error: no filetype supplied\n'
+    parser.print_help()
+    sys.exit(2)
+
+filetype = args[0]
+if filetype not in validFileTypes:
+    print 'Error: {0} is not a valid filetype.'.format(filetype)
+    print 'Valid filetypes are: {0}\n'.format(', '.join(validFileTypes))
+    parser.print_help()
+    sys.exit(2)
+
+#add default locales if none have been specified
+if len(options.locales) == 0:
+    options.locales = flowutil.listSupportedLocales()
+
+#add 'None' locale, representing the source document
+#TODO may want to get rid of this
+#options.locales.append(None)
+
+#get the list of base names to use
+basenames = args[1:]
+if len(basenames) == 0:
+    basenames = [defaultBaseName]
+
+#generate names up to numDocs
+names=[]
+for name in basenames:
+    if options.numdocs == 1:
+        names = basenames
+    else:
+        #TODO should use list comprehension for this
+        for num in range(options.numdocs):
+            names.append(name+str(num))
+
+#print "generating {0} set(s) of files with translations for {1} locale(s), each with {2} textflow(s).".format(len(names), len(locales), numFlows)
+
+if filetype == 'properties':
+    proputil.generatePropertiesFiles(names=names,
+                                     locales=options.locales,
+                                     numFlows=options.numflows,
+                                     contentLength=options.contentlength)
+
+elif filetype == 'po':
+    poutil.generatePoFiles(names=names,
+                           locales=options.locales,
+                           numFlows=options.numflows,
+                           contentLength=options.contentlength)
+    #TODO add boolean for whether to use individual subdirs for locales
+    # may want to allow this for all filetypes
+
+else:
+    print "Filetype {0} not yet supported. Sorry.\n".format(filetype)
+    sys.exit(1)
+
+
+print ' Done!'
+
+
+
+
