@@ -1,6 +1,7 @@
 
 import codecs, polib
 
+from datetime import datetime
 from fileutil import ensure_dir
 from flowutil import makeRandomTextFlows
 
@@ -17,17 +18,55 @@ def generatePoFiles(names, locales, numFlows, contentLength):
         
         #write the source file
         f = polib.POFile()
-        #TODO write some sort of header (in targets too)
-        # see here for header info http://translate.sourceforge.net/wiki/guide/project/howto
+        header = makePoHeader(name)
+        f.header = header
+        meta = makePoMetadata()
+        f.metadata.update(meta)
         addTextFlows(toFile=f, textFlows=flows)
         savePoFile(f, outputDir, name, None)
         
         #write the targets
         for locale in locales:
             f = polib.POFile()
-            f.encoding='utf-8'
+            f.encoding='utf-8' #TODO is this needed?
+            f.header = header
+            f.metadata.update(meta)
+            
             addTextFlows(toFile=f, textFlows=flows, locale=locale)
             savePoFile(f, outputDir, name, locale)
+
+
+# see here for header info http://translate.sourceforge.net/wiki/guide/project/howto
+
+def makePoHeader(name):
+    header = "Generated title for %(name)s\n"
+    header += "Copyright (C) %(name)s %(year)s.\n"
+    header += "This file is distributed under the same license as the %(name)s package.\n"
+    header += "Gibberer Gibberer gibberer@example.com, %(year)s\n"
+    return header % {'name': name, 'year': datetime.now().year}
+    
+TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
+def makePoMetadata():
+    """Pass the po file's metadata to this function to have the values set"""
+    
+    meta = {
+        u'Project-Id-Version' : u'0',
+        u'Report-Msgid-Bugs-To' : u'gibberer@example.com',
+        u'POT-Creation-Date' : unicode(datetime.now().strftime(TIME_FORMAT)),
+        u'PO-Revision-Date' : unicode(datetime.now().strftime(TIME_FORMAT)),
+        u'Last-Translator' : u'The Gibberer',
+        u'Language-Team' : u'Gibberish Team',
+        u'MIME-Version' : u'1.0',
+        u'Content-Type' : u'application/x-publican; charset=UTF-8',
+        u'Content-Transfer-Encoding' : u'8bit',
+        u'Plural-Forms' : u'nplurals=2; plural=n != 1;'
+    }
+    
+    #could make plural forms correct for different locales. Not worth the bother at the moment
+    
+    return meta
+
 
 
 def addTextFlows(toFile, textFlows, locale=None):
