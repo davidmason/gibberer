@@ -38,15 +38,17 @@ def addTextFlows(toFile, textFlows, locale=None):
     for flow in textFlows:
         poentry = polib.POEntry()
         poentry.msgid = flow.content
+        poentry.occurrences = flow.occurrences
+        poentry.comment = flow.extracted_comment
+
 
         if isSource:
             poentry.msgstr = ''
         else:
             target = flow.getTarget(locale)
             poentry.msgstr = target.content
-            poentry.occurrences = target.occurrences
-            poentry.comment = target.extracted_comment
             poentry.tcomment = target.comment
+            poentry.flags = target.flags
             
         toFile.append(poentry)
     

@@ -21,6 +21,8 @@ unicodeRanges = { #None : [(0x0020, 0x005B), (0x005D, 0x007E)], #includes space,
 
 import random
 
+SOURCE_EXTENSIONS = ['.c', '.py', '.cpp', '.sh', '.xml']
+
 
 def listSupportedLocales():
     locales = unicodeRanges.keys()
@@ -37,10 +39,14 @@ def makeRandomTextFlows(locales, baseId, howMany, contentLength):
     
     flows = []
     for number in range(howMany):
-        flow = TextFlow(baseId+str(number), makeRandomString(length=contentLength, locale=None))
+        flow = TextFlow(baseId+str(number),
+                        content=makeRandomString(length=contentLength, locale=None),
+                        extracted_comment=makeRandomString(length=contentLength, locale=None))
+        flow.addRefs([(baseId+'ref'+random.choice(SOURCE_EXTENSIONS), random.randint(0, 1000))])
         for locale in locales:
-            targ = Target(makeRandomString(length=contentLength, locale=locale))
-            #TODO generate comments, flags, etc. for targets
+            targ = Target(content=makeRandomString(length=contentLength,locale=locale),
+                          comment=makeRandomString(length=contentLength, locale=locale),
+                          flags=random.choice([ [], ['fuzzy'] ]))
             flow.putTarget(locale, targ)
         flows.append(flow)
     return flows
@@ -48,9 +54,8 @@ def makeRandomTextFlows(locales, baseId, howMany, contentLength):
 
 def makeRandomString(length, locale):
     """Returns a random string of characters used for the given locale"""
-    # TODO need to check for escape characters \ in here, probably replace with \\
-    # currently do not have \ in the list of characters so it isn't a problem
-    return makeRandomUnicodeString(length, unicodeRanges[locale])#.encode('unicode_escape')
+
+    return makeRandomUnicodeString(length, unicodeRanges[locale])
 
 
 def makeRandomUnicodeString(length, ranges):
@@ -85,11 +90,16 @@ def makeTextFlows(howMany, baseId, baseContent):
 class TextFlow:
     """A source string and associated """
     
-    def __init__(self, flowId, content):
+    def __init__(self, flowId, content, extracted_comment=''):
         self.flowId=flowId
         self.content=content
         self.targets = {}
-        
+        self.occurrences = []
+        self.extracted_comment = extracted_comment
+
+    def addRefs(self, references):
+        self.occurrences.extend(references)
+    
     def putTarget(self, locale, target):
         """target should be of type Target"""
         self.targets[locale] = target
@@ -108,12 +118,10 @@ class Target:
     things used for other formats.
     """
     
-    def __init__(self, content, comment='', extracted_comment='', references=[], flags=[]):
+    def __init__(self, content, comment='', flags=[]):
         self.content = content
-        self.occurrences = references
         self.flags = flags
         self.comment = comment
-        self.extracted_comment = extracted_comment
 
 
 
