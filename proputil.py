@@ -56,26 +56,31 @@ def writePropHeader(toFile, comment):
     toFile.write('# ' + comment + '\n')
 
     
-def writeTextFlows(toFile, textFlows, separators, locale=None):
+def writeTextFlows(toFile, textFlows, separators=validPropsSeparators, locale=None, useEach=1):
     """Writes the given list of textflows to the given file.
     
-    testFlows should be in the form [('id1', 'content1'), ('id2', 'content2')]
+    textFlows should be in the form [('id1', 'content1'), ('id2', 'content2')]
     separator should be a list of 1 or more standard separators to use between id and content
+    
+    set useEach to a value higher than one to write out less textflows.
     """
     if len(separators) < 1:
         raise ValueError('This method needs at least one separator, but was given ' + str(separators))
     
     isSource = (locale is None)
+    count = 0
 
     for flow in textFlows:
-        ident = flow.flowId
-        
-        if isSource:
-            content = flow.content
-        else:
-            target = flow.getTarget(locale)
-            content = target.content
-            #not doing target comments etc. for now
-        
-        toFile.write(''.join([ident, random.choice(separators), content.encode('unicode_escape'), '\n']))
+        count += 1
+        if count % useEach == 0:
+            ident = flow.flowId
+            
+            if isSource:
+                content = flow.content
+            else:
+                target = flow.getTarget(locale)
+                content = target.content
+                #not doing target comments etc. for now
+            
+            toFile.write(''.join([ident, random.choice(separators), content.encode('unicode_escape'), '\n']))
 
